@@ -1,23 +1,23 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '2.7.0'
+ruby '3.1.2'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '~> 6.0.3', '>= 6.0.3.2'
 gem 'puma', '~> 4.1'
-gem 'sass-rails', '>= 6'
 gem 'serviceable'
 gem 'activerecord-import'
 gem 'devise'
 gem 'omniauth-google-oauth2'
+gem 'omniauth-rails_csrf_protection'
 gem 'aws-sdk', '~> 3'
 gem "haml-rails", "~> 2.0"
 gem 'jquery-rails'
 gem 'chart-js-rails'
 gem 'dalli'
 gem 'discard', '~> 1.2'
-gem 'bootstrap', '~> 4.3.1'
+gem 'bootstrap', '~> 5.2.3'
 gem 'role_model', '0.8.2'
 
 # Use Redis adapter to run Action Cable in production
@@ -63,3 +63,5 @@ end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+
+gem "dartsass-rails", "~> 0.4.0"

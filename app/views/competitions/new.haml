@@ -8,7 +8,7 @@
     %li= link_to 'Fork Existing', template_competitions_path
     %li= link_to 'Cancel', competitions_path
 
-%section
+%section.l-row
   %h1 New Competition
 
   - if flash[:error]
@@ -32,6 +32,9 @@
     .form-group
       = f.label :mode, 'Mode'
       = f.select :mode, options_for_select(Competition.modes, :ffa), { include_blank: false }, class: "form-control"
+    .form-group
+      = f.label :secret_key, 'Secret Key'
+      = f.text_field :secret_key, value: SecureRandom.hex(3), class: 'form-control'
     .form-group
       = f.submit 'Create Competition', class: 'form-control'
 
