@@ -24,10 +24,22 @@ class CompetitionsController < AuthenticatedController
 
   def show
     @instance = cached_instance
+    mode = params[:mode].to_sym rescue :default
+
+    # identify columns with non-zero rows to inform the leader partial
+    @all_cols = Ranking.column_names.map(&:to_sym) - [:id, :created_at, :updated_at, :vessel_id, :competition_id]
+    case mode
+    when :all
+      @visible_cols = @all_cols
+    when :metric
+      @visible_cols = @all_cols.filter { |n| @instance.metric[n] != 0 }
+    else
+      @visible_cols = @all_cols.filter { |n| @instance.leaders.any? { |e| e[n] != 0 }}
+    end
 
     respond_to do |format|
-      format.json { render json: @instance }
-      format.xml { render xml: @instance }
+      format.json { render json: @instance, except: :secret_key }
+      format.xml { render xml: @instance, except: :secret_key }
       format.html
     end
   end
@@ -37,7 +49,7 @@ class CompetitionsController < AuthenticatedController
   end
 
   def recent_vessels
-    now = Time.now
+    now = cached_instance.started_at || Time.now
     min_date = now - 1.month
     vessels = Rails.cache.fetch("competition-#{params[:id]}-vessels") do
       VesselAssignment.where(competition_id: params[:id]).includes(:vessel).order(:updated_at).where('updated_at > ?', min_date).map(&:vessel)
@@ -88,6 +100,7 @@ class CompetitionsController < AuthenticatedController
             ranking.waypoints = r.map(&:waypoints).sum
             ranking.elapsed_time = r.map(&:elapsed_time).sum
             ranking.deviation = r.map(&:deviation).sum
+            ranking.ast_parts_in = r.map(&:ast_parts_in).sum
             ranking.score = @competition.metric.score_for_record(ranking)
             ranking.rank = 0
             ranking
@@ -112,11 +125,12 @@ class CompetitionsController < AuthenticatedController
   def edit
     @competition = Competition.find(params[:id])
     @rulesets = Ruleset.all.map { |e| [e.name, e.id] }
-    redirect_to competition_path(@competition) unless current_user == @competition.user
+    redirect_to competition_path(@competition) unless @competition.user_can_manage?(current_user)
   end
 
   def update
     @competition = Competition.find(params[:id])
+    redirect_to competition_path(@competition) and return unless @competition.user_can_manage?(current_user)
     @competition.update(valid_params)
     @competition.save
     redirect_to competition_path(@competition)
@@ -205,12 +219,21 @@ class CompetitionsController < AuthenticatedController
   def duplicate
     src = Competition.find(params[:competition][:original_id])
     redirect_to template_competitions_path and return if src.nil?
+    if Competition.where(name: params[:competition][:name]).any?
+      flash[:error] = "Competition with that name already exists"
+      redirect_to template_competitions_path and return
+    end
+    if src.metric.nil?
+      flash[:error] = "Source competition has no metric"
+      redirect_to template_competitions_path and return
+    end
     dst = Competition.create(
         name: params[:competition][:name],
         user_id: current_user.id,
         max_vessels_per_player: src.max_vessels_per_player,
         max_stages: src.max_stages,
-        mode: src.mode
+        mode: src.mode,
+        secret_key: src.secret_key
     )
     if dst.errors.any?
       flash[:error] = dst.errors.full_messages.join(", ")
@@ -253,6 +276,6 @@ class CompetitionsController < AuthenticatedController
   end
 
   def valid_params
-    params.require(:competition).permit(:name, :duration, :private, :ruleset_id, :max_stages, :max_vessels_per_player, :mode, :max_players_per_heat)
+    params.require(:competition).permit(:name, :duration, :private, :ruleset_id, :max_stages, :max_vessels_per_player, :mode, :max_players_per_heat, :secret_key)
   end
 end

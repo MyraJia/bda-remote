@@ -54,6 +54,7 @@ class RecordsController < ApplicationController
       r.waypoints = rp['waypoints'] rescue 0
       r.elapsed_time = rp['elapsed_time'] rescue 0
       r.deviation = rp['deviation'] rescue 0
+      r.ast_parts_in = rp['ast_parts_in'] rescue 0
       r.save
 
       if r.errors.any?
@@ -97,7 +98,8 @@ class RecordsController < ApplicationController
                  :wins,
                  :waypoints,
                  :elapsed_time,
-                 :deviation)
+                 :deviation,
+                 :ast_parts_in)
   end
 
   def did_assign_collection
@@ -105,7 +107,8 @@ class RecordsController < ApplicationController
   end
 
   def check_authorization
-    reject_request and return if params[:client_secret].nil? || params[:client_secret] != ENV['CLIENT_SECRET']
+    current_comp = Competition.find(params[:competition_id])
+    reject_request and return if params[:client_secret].nil? || params[:client_secret] != current_comp.secret_key
   end
 
   def reject_request

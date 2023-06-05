@@ -12,6 +12,7 @@ class Competition < ApplicationRecord
   has_many :rankings
   has_one :metric
   has_one :variant_group_assignment
+  has_many :organizers
 
   validates :user_id, presence: true
   validates :status, presence: true
@@ -20,6 +21,7 @@ class Competition < ApplicationRecord
   validates :max_stages, presence: true, numericality: { only_integers: true }
   validates :max_vessels_per_player, presence: true, numericality: { only_integers: true }
   validates :name, presence: true, length: { minimum: 4, maximum: 150 }
+  validates :secret_key, presence: true
 
   after_initialize :assign_initial_status
   after_initialize :assign_initial_stage
@@ -145,6 +147,11 @@ class Competition < ApplicationRecord
     self.save!
   end
 
+  def user_can_manage?(user)
+    return true if user_id == user.id
+    organizers.where(user_id: user.id).any?
+  end
+
   def players_per_heat(vessel_count)
     max_players = max(8, min(max_players_per_heat, 20)) rescue 8
     possibles = Array(5..max_players)
@@ -250,6 +257,7 @@ class Competition < ApplicationRecord
       ranking.waypoints = r.map(&:waypoints).sum
       ranking.elapsed_time = r.map(&:elapsed_time).sum
       ranking.deviation = r.map(&:deviation).sum
+      ranking.ast_parts_in = r.map(&:ast_parts_in).sum
       ranking.score = metric.score_for_record(ranking)
       ranking.rank = 0
       ranking
@@ -313,6 +321,7 @@ class Competition < ApplicationRecord
       ranking.waypoints = r.map(&:waypoints).sum
       ranking.elapsed_time = r.map(&:elapsed_time).sum
       ranking.deviation = r.map(&:deviation).sum
+      ranking.ast_parts_in = r.map(&:ast_parts_in).sum
       ranking.score = metric.score_for_record(ranking)
       ranking.rank = 0
       ranking

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_03_03_003602) do
+ActiveRecord::Schema.define(version: 2023_05_28_181747) do
 
   create_table "competitions", force: :cascade do |t|
     t.datetime "started_at"
@@ -29,6 +29,7 @@ ActiveRecord::Schema.define(version: 2022_03_03_003602) do
     t.integer "max_vessels_per_player"
     t.string "mode"
     t.integer "max_players_per_heat"
+    t.string "secret_key"
     t.index ["name"], name: "index_competitions_on_name", unique: true
   end
 
@@ -88,7 +89,15 @@ ActiveRecord::Schema.define(version: 2022_03_03_003602) do
     t.integer "waypoints"
     t.float "elapsed_time"
     t.float "deviation"
+    t.float "ast_parts_in"
     t.index ["competition_id"], name: "index_metrics_on_competition_id"
+  end
+
+  create_table "organizers", force: :cascade do |t|
+    t.integer "user_id"
+    t.integer "competition_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "parts", force: :cascade do |t|
@@ -139,6 +148,7 @@ ActiveRecord::Schema.define(version: 2022_03_03_003602) do
     t.integer "waypoints"
     t.float "elapsed_time"
     t.float "deviation"
+    t.integer "ast_parts_in"
     t.index ["competition_id", "vessel_id"], name: "index_rankings_on_competition_id_and_vessel_id"
   end
 
@@ -173,6 +183,7 @@ ActiveRecord::Schema.define(version: 2022_03_03_003602) do
     t.integer "waypoints"
     t.float "elapsed_time"
     t.float "deviation"
+    t.integer "ast_parts_in"
     t.index ["competition_id"], name: "index_records_on_competition_id_and_player_id"
     t.index ["distance"], name: "index_records_on_distance"
   end
